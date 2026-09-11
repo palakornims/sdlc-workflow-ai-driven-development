@@ -1,0 +1,14 @@
+{
+  "name": "sdlc",
+  "displayName": "AI-Driven SDLC Workflow",
+  "version": "1.0.0",
+  "description": "Seven-phase AI-driven SDLC for Claude Code: Plan, Design, Breakdown, Implement, Code Review, Test, Validation. One subagent per phase, slash commands to run them, mandatory document approval and step logging. .NET backend, Playwright tests, Codex second review.",
+  "author": { "name": "palakornims", "url": "https://github.com/palakornims" },
+  "repository": "https://github.com/palakornims/sdlc-workflow-ai-driven-development",
+  "license": "MIT",
+  "keywords": ["sdlc", "workflow", "dotnet", "playwright", "codex", "clean-architecture", "owasp"],
+  "dependencies": [
+    { "name": "dotnet-skills", "marketplace": "dotnet-skills" },
+    { "name": "codex", "marketplace": "openai-codex" }
+  ]
+}

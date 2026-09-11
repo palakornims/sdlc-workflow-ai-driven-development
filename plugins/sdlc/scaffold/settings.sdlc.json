@@ -1,0 +1,13 @@
+{
+  "fallbackModel": ["opus"],
+  "extraKnownMarketplaces": {
+    "sdlc-workflow": { "source": { "source": "github", "repo": "palakornims/sdlc-workflow-ai-driven-development" } },
+    "dotnet-skills": { "source": { "source": "github", "repo": "Aaronontheweb/dotnet-skills" } },
+    "openai-codex": { "source": { "source": "github", "repo": "openai/codex-plugin-cc" } }
+  },
+  "enabledPlugins": {
+    "sdlc@sdlc-workflow": true,
+    "dotnet-skills@dotnet-skills": true,
+    "codex@openai-codex": true
+  }
+}

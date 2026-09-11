@@ -1,0 +1,4 @@
+# Codex CLI configuration for this repository.
+# The code-review stage and /codex:* commands respect these values; do not override per invocation.
+model = "gpt-6-astra"
+model_reasoning_effort = "high"

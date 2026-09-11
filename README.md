@@ -23,14 +23,29 @@ documents are written and approved**, and **every step and change is logged** wi
 timestamps, and commit SHAs. Full detail in [`WORKFLOW.md`](WORKFLOW.md); agent conventions in
 [`CLAUDE.md`](CLAUDE.md).
 
-## Get started
+## Use it in any project (plugin)
+
+```bash
+cd your-project
+claude plugin marketplace add palakornims/sdlc-workflow-ai-driven-development
+claude plugin install sdlc@sdlc-workflow --scope project
+claude
+/sdlc:init            # scaffolds docs, templates, logs, WORKFLOW.md, CLAUDE.md section, settings, Playwright, Codex
+```
+
+`/sdlc:init` never overwrites files you already have, and runs `scripts/setup.sh` to install the
+`dotnet-skills` and `codex` dependencies, Playwright, and the Playwright agents.
+
+## Or start from this repo as a template
 
 ```bash
 git clone https://github.com/palakornims/sdlc-workflow-ai-driven-development.git
 cd sdlc-workflow-ai-driven-development
-./scripts/setup.sh      # installs dotnet-skills + codex plugins, Playwright, checks toolchain
+./scripts/setup.sh      # installs sdlc, dotnet-skills, codex plugins, Playwright, checks toolchain
 claude
 ```
+
+Developing the plugin itself: `claude --plugin-dir ./plugins/sdlc`, then `/reload-plugins` after edits.
 
 On first launch, approve the project-scoped `playwright-test` MCP server from `.mcp.json` so
 the Playwright agents have browser tools.
@@ -55,8 +70,9 @@ Each command checks the previous gate, runs the right agents, and stops for your
 ## Layout
 
 ```
-.claude/agents/     one subagent per phase, plus generated Playwright agents
-.claude/skills/     one slash command per phase, plus /log and /status
+plugins/sdlc/       the workflow as a plugin: agents/, skills/, scaffold/, scripts/init.sh
+.claude-plugin/     marketplace manifest (this repo is the marketplace)
+.claude/agents/     generated Playwright agents (project-local)
 .claude/settings.json   model fallback, marketplaces, enabled plugins
 docs/01-plan … 07-validation   phase artifacts and logs
 docs/templates/     one template per artifact

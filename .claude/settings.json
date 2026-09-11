@@ -3,6 +3,7 @@
     "opus"
   ],
   "enabledPlugins": {
+    "sdlc@sdlc-workflow": true,
     "dotnet-skills@dotnet-skills": true,
     "codex@openai-codex": true
   },
@@ -17,6 +18,12 @@
       "source": {
         "source": "github",
         "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "sdlc-workflow": {
+      "source": {
+        "source": "github",
+        "repo": "palakornims/sdlc-workflow-ai-driven-development"
       }
     }
   }

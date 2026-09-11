@@ -1,0 +1,16 @@
+{
+  "name": "sdlc-workflow",
+  "owner": { "name": "palakornims", "url": "https://github.com/palakornims" },
+  "description": "AI-driven SDLC workflow plugins for Claude Code",
+  "allowCrossMarketplaceDependenciesOn": ["dotnet-skills", "openai-codex"],
+  "plugins": [
+    {
+      "name": "sdlc",
+      "source": "./plugins/sdlc",
+      "description": "Seven-phase AI-driven SDLC: phase agents, slash commands, document templates, mandatory approvals and logging. .NET, Playwright, Codex.",
+      "version": "1.0.0",
+      "category": "workflow",
+      "keywords": ["sdlc", "workflow", "dotnet", "playwright", "codex"]
+    }
+  ]
+}

@@ -1,6 +1,5 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+<!-- sdlc-plugin:begin (managed by /sdlc:init; edit freely, the marker is only used to avoid duplicate insertion) -->
+# AI-Driven SDLC workflow (sdlc plugin)
 
 ## Mandatory workflow rule
 
@@ -131,14 +130,4 @@ Code (or run `/reload-plugins`) afterwards.
 - Solution layout, once created by the Design phase, follows Clean Architecture: Domain,
   Application, Infrastructure, Api projects with references pointing inward, guarded by an
   architecture test.
-
-## Current state
-
-As of 2026-09-11 this directory is empty: no source files, no package manifest, no README, and no git repository. There are no build, lint, or test commands to run yet.
-
-When code is added, update this file with:
-
-- **Commands**: how to install dependencies, build, lint, run the full test suite, and run a single test.
-- **Architecture**: the high-level structure that requires reading several files to understand (entry points, how major modules interact, data flow), not a listing of every file.
-
-Keep this file short and free of generic advice; only record what a new contributor could not discover in a minute by reading the tree.
+<!-- sdlc-plugin:end -->
