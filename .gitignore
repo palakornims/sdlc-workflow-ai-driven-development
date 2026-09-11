@@ -1,0 +1,19 @@
+# Node / Playwright
+node_modules/
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# OS
+.DS_Store
+
+# Claude Code local overrides
+.claude/settings.local.json

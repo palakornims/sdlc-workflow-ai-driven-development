@@ -1,0 +1,23 @@
+{
+  "fallbackModel": [
+    "opus"
+  ],
+  "enabledPlugins": {
+    "dotnet-skills@dotnet-skills": true,
+    "codex@openai-codex": true
+  },
+  "extraKnownMarketplaces": {
+    "dotnet-skills": {
+      "source": {
+        "source": "github",
+        "repo": "Aaronontheweb/dotnet-skills"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    }
+  }
+}
