@@ -35,13 +35,16 @@ claude
 On first launch, approve the project-scoped `playwright-test` MCP server from `.mcp.json` so
 the Playwright agents have browser tools.
 
-Then describe a feature and start the first phase:
+Then run the phases as slash commands:
 
 ```
-Use the product-owner agent to plan: <your feature>
+/plan <your feature>          /implement TASK-001        /test STORY-001
+/design <your feature>        /review TASK-001           /validate STORY-001
+/breakdown <your feature>     /triage TASK-001 <codex output>
+/status                       /log <what you approved or ran>
 ```
 
-Each agent stops at its gate and asks you to approve before the next phase begins.
+Each command checks the previous gate, runs the right agents, and stops for your approval.
 
 ## Requirements
 
@@ -53,6 +56,7 @@ Each agent stops at its gate and asks you to approve before the next phase begin
 
 ```
 .claude/agents/     one subagent per phase, plus generated Playwright agents
+.claude/skills/     one slash command per phase, plus /log and /status
 .claude/settings.json   model fallback, marketplaces, enabled plugins
 docs/01-plan … 07-validation   phase artifacts and logs
 docs/templates/     one template per artifact

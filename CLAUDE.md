@@ -10,6 +10,14 @@ be approved by a human before any development starts.** If asked to implement so
 no approved plan, design, and task breakdown, stop and create the missing documents first, then
 ask for approval.
 
+## Slash commands (skills)
+
+Run a phase with its skill: `/plan`, `/design`, `/breakdown`, `/implement TASK-NNN`,
+`/review TASK-NNN`, `/triage TASK-NNN [Codex output]`, `/test STORY-NNN`, `/validate STORY-NNN`,
+plus `/log` to record a human action and `/status` to see where everything stands. Skills live
+in `.claude/skills/` and run in the main session; they check the gate, invoke the right agents
+in order, and relay the result. They are not model-invocable: a human starts every phase.
+
 ## Subagents
 
 - `product-owner` (`.claude/agents/product-owner.md`): runs the Plan phase and the Validation

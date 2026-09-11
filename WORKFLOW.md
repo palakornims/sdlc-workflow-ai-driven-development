@@ -502,7 +502,8 @@ Each return produces a new PR against the upstream artifact so the change is rec
 │   ├── 07-validation/
 │   └── templates/            # one template per artifact
 ├── .claude/
-│   ├── agents/               # one subagent per phase
+│   ├── agents/               # one subagent per phase, plus generated Playwright agents
+│   ├── skills/               # one slash command per phase: /plan /design ... /validate, /log, /status
 │   └── settings.json         # model fallback, marketplaces, enabled plugins
 ├── .codex/config.toml        # Codex reviewer model and reasoning effort
 ├── .mcp.json                 # playwright-test MCP server for the Playwright agents
@@ -515,16 +516,25 @@ Phase 4 has no docs folder because its artifacts are the code and PRs themselves
 
 ## Running a phase with Claude Code
 
-Each phase is invoked as a slash command backed by a skill in `.claude/skills/<phase>/SKILL.md`.
-The skill loads the upstream artifacts, applies the template, drafts the output, and stops at the
-gate checklist for human approval. Suggested commands:
+Each phase is a slash command backed by a skill in `.claude/skills/<name>/SKILL.md`. Skills run
+in the main session, which is the only place that can spawn subagents, run `/codex:rescue`, and
+chain the Playwright agents; agents do the work, skills sequence it. Every skill is
+`disable-model-invocation: true`, so only a human starts a phase. Each skill checks the
+upstream gate, invokes the agent with a fixed prompt, relays the result, and states what must
+be approved before the next command.
 
-| Command | Reads | Writes |
-|---------|-------|--------|
-| `/plan` | problem statement | `docs/01-plan/` |
-| `/design` | `docs/01-plan/` | `docs/02-design/`, `CLAUDE.md` |
-| `/breakdown` | `docs/02-design/` | `docs/03-tasks/` |
-| `/implement TASK-NNN` | task, design, `CLAUDE.md` | branch + PR |
-| `/review TASK-NNN` | PR, design, threat model, Codex output | `docs/05-review/` |
-| `/test STORY-NNN` | acceptance criteria, code, Playwright agents | `specs/`, `tests/e2e/`, `docs/06-test/` |
-| `/validate STORY-NNN` | everything, running system | `docs/07-validation/` |
+| Command | Gate it checks | Agents it invokes | Writes |
+|---------|----------------|-------------------|--------|
+| `/plan <feature>` | none | `product-owner` | `docs/01-plan/` |
+| `/design <feature>` | plan Approved | `solution-architect` | `docs/02-design/`, `CLAUDE.md` |
+| `/breakdown <feature>` | plan + design Approved | `project-manager` | `docs/03-tasks/` |
+| `/implement TASK-NNN` | backlog Approved, DoR met | `dotnet-developer`, then `/codex:rescue` | branch + PR |
+| `/review TASK-NNN` | PR open | `/codex:rescue` if needed, `code-reviewer` | `docs/05-review/REVIEW-*`, `TRIAGE-*` |
+| `/triage TASK-NNN [output]` | triage sheet exists | `code-reviewer` → `solution-architect` → `dotnet-developer` → `code-reviewer` | fix commits, logs |
+| `/test STORY-NNN` | tasks Done, review clean | `qa-engineer` ↔ `playwright-test-planner` / `generator` / `healer` | `specs/`, `tests/e2e/`, `docs/06-test/` |
+| `/validate STORY-NNN` | test report Approved | `product-owner` (validation mode) | `docs/07-validation/` |
+| `/log <action> ...` | — | none | appends to the right log and ticket |
+| `/status [id]` | — | none | nothing; reports state and next command |
+
+`/log` exists because the logging rule applies to humans too: approvals, Codex runs, dismissals,
+and sign-offs are recorded through it.
