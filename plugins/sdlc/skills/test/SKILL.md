@@ -21,12 +21,19 @@ approved in this session.
 
 ## Cycle
 
-1. **Plan.** Invoke `sdlc:qa-engineer` (`subagent_type: "sdlc:qa-engineer"`): "Test phase for
-   $ARGUMENTS. Verify preconditions (tasks Done, Code Review clean), write the test plan under
-   docs/06-test/, prepare tests/e2e/seed.spec.ts, and tell me the exact prompt for
-   playwright-test-planner."
-2. **Explore.** Invoke `playwright-test-planner` with the prompt QA gave. It writes
-   `specs/<story>.md`.
+Steps 2 to 4 are **conditional**: run them only for scenarios the coverage audit marks as a
+gap. A story whose tests were already written during Implement may go straight from step 1 to
+step 5. That is a correct outcome, not a shortcut.
+
+1. **Audit, then plan.** Invoke `sdlc:qa-engineer` (`subagent_type: "sdlc:qa-engineer"`): "Test
+   phase for $ARGUMENTS. Verify preconditions (tasks Done, Code Review clean). Do the coverage
+   audit first: for every acceptance scenario find whether a non-vacuous test already exists,
+   proving non-vacuity by mutation for must-have scenarios. Then write the test plan under
+   docs/06-test/ including the coverage audit table, prepare tests/e2e/seed.spec.ts, and tell
+   me either the exact playwright-test-planner prompt for the gaps, or that there are no gaps."
+2. **Explore (only if the audit found gaps).** Invoke `playwright-test-planner` with the
+   prompt QA gave. It writes `specs/<story>.md` covering the gaps only. If QA reported no gaps,
+   skip to step 5.
 3. **Review plan.** Invoke `sdlc:qa-engineer`: "Review specs/<file> for $ARGUMENTS against the
    acceptance criteria; edit if needed; log; then list each test case with the exact
    playwright-test-generator prompt (test-suite, test-name, test-file, seed-file, body)."

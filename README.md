@@ -31,6 +31,7 @@ claude plugin marketplace add palakornims/sdlc-workflow-ai-driven-development
 claude plugin install sdlc@sdlc-workflow --scope project
 claude
 /sdlc:init            # scaffolds docs, templates, logs, WORKFLOW.md, CLAUDE.md section, settings, Playwright, Codex
+/sdlc:doctor          # anytime: checks MCP tools, ports, stale processes, status drift
 ```
 
 `/sdlc:init` never overwrites files you already have, and runs `scripts/setup.sh` to install the

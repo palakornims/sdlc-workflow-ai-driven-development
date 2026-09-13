@@ -44,6 +44,22 @@ that results from a review, MUST be logged in the repo at the time it happens.**
 - Any step with no log line did not happen: the gate checklists treat a missing log entry as a
   failed gate.
 
+## Mandatory rule: an agent that has reported is done
+
+A subagent can stay alive after it has delivered its report, and it cannot see what the session
+that invoked it does next. In a real run, a validation agent that was still alive watched its
+own report get a human sign-off recorded by the orchestrator, concluded it had been tampered
+with, reverted the sign-off twice, and escalated it as a security incident. Nothing was wrong.
+
+- Once an agent has delivered its final report and asked for human input, it **stops writing to
+  its own output files**. The run is over even if the process is not.
+- If it wakes and finds its output changed, the posture is **unverified from where I stand**,
+  not illegitimate. It flags the difference, names the file, and asks.
+- No agent reverts a decision it did not make, re-opens a closed gate, or declares tampering on
+  its own judgement. The orchestrating session and the human have context the agent lacks.
+- The append-only logs are the shared record. Read them before drawing a conclusion about a
+  change you did not make.
+
 ## Principles
 
 1. **Document first, then approve, then build.** See the mandatory rules above.
@@ -55,9 +71,13 @@ that results from a review, MUST be logged in the repo at the time it happens.**
    gate checklist is satisfied and the artifact is merged.
 5. **Traceability.** Every item carries an ID (`REQ-`, `DES-`, `TASK-`, `FND-`, `TEST-`) and references
    the IDs upstream of it. Validation is a check that the chain is unbroken.
-6. **Small, independently shippable tasks.** Breakdown must produce tasks that one agent session
+6. **No agent pins a model.** Every agent inherits the session model so you choose the
+   cost/quality trade-off per run. Pinned frontier models caused five rate-limit stalls in one
+   real run, one over six hours. Override per call with the Agent tool's `model` parameter, or
+   per project with a copy of the agent under `.claude/agents/`.
+7. **Small, independently shippable tasks.** Breakdown must produce tasks that one agent session
    can complete, review, and test in isolation.
-7. **Context is explicit.** `CLAUDE.md` holds the conventions the agent must follow; each phase
+8. **Context is explicit.** `CLAUDE.md` holds the conventions the agent must follow; each phase
    has a prompt template so runs are repeatable.
 
 ## Roles
@@ -234,6 +254,10 @@ then opens a PR and stops for human review.
 
 **Gate (task complete when):**
 - [ ] CI is green (format, build with warnings as errors, tests, vulnerability scan, slopwatch).
+- [ ] If the task changed a test-enforcement file (architecture test, lint rule, CI gate), the
+      PR shows mutation evidence in both directions: the check fails on the violation it is
+      meant to catch, and still passes on what passed before.
+- [ ] Any CI-equivalent command the change affects was run locally, not reasoned about.
 - [ ] PR references the task and requirement IDs and contains the security self-review.
 - [ ] Code Review phase (Phase 5) has returned Approve or Approve with comments.
 - [ ] A human has reviewed and approved.
@@ -398,6 +422,9 @@ invokes them in the order the QA agent specifies.
 in `docs/templates/`.
 
 **Gate (Test complete when):**
+- [ ] Coverage audit ran first: every acceptance scenario marked Covered, Vacuous, or Gap,
+      with non-vacuity proven by mutation for must-have scenarios marked Covered. The planner
+      and generator ran only for gaps. Zero gaps is a valid result.
 - [ ] Test plan exists with every acceptance scenario assigned a level and `TEST-` ID.
 - [ ] Playwright plan and generated tests reviewed by `qa-engineer`.
 - [ ] All levels pass in CI; failures triaged through the healer or to a `DEF-`.
@@ -466,6 +493,20 @@ retrospective input in the report, `docs/07-validation/validation-log.md`. Templ
 
 ---
 
+## Troubleshooting
+
+Failure modes seen in real runs. All of them are silent: nothing errors, the agent just quietly
+cannot do its job. `/sdlc:doctor` checks every one of these.
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| A Playwright agent reports it has no browser tools | The MCP tool names in the agent do not match how the server is registered. A project-level `.mcp.json` registers `mcp__playwright-test__*`; a plugin-declared server would register `mcp__plugin_sdlc_playwright-test__*`. | This plugin ships the server in the project scaffold so the bare form matches what `npx playwright init-agents` generates. Regenerate the agents with `npm run playwright:agents`. |
+| `browser_*` fails with `Must setup test before interacting with the page` | The MCP tools are stateful and need a page session first. | Call `planner_setup_page` before any `browser_*` call. If the tool is unavailable, drive Playwright through a standalone script via `Bash` instead. |
+| Page setup fails with `address already in use` | On macOS the AirPlay Receiver holds port 5000 permanently. The MCP server is a separate child process and does not inherit `playwright.config.ts`. | Its port comes from the `env` block in `.mcp.json`. The scaffold defaults to 4280 for this reason. Never set it to 5000. |
+| A config change to `.mcp.json` has no effect after `/reload-plugins` | `/reload-plugins` re-registers tool schemas but does not respawn a running MCP server child process. It reports success either way. | `ps -eo pid,lstart,command \| grep run-test-mcp-server`, compare the start time to your edit, and `kill` the stale process. The next tool call spawns a fresh one. |
+| Several MCP server processes are alive at once | Each orphan is from an earlier session. They make port and staleness problems much harder to diagnose. | `/sdlc:doctor --fix` kills the duplicates and keeps the newest. Worth running at the start of a long session. |
+| `dotnet test --collect:"XPlat Code Coverage"` reports `Zero tests ran` while plain `dotnet test` passes | Known mismatch between the coverage collector and Microsoft.Testing.Platform on xunit v3. | Not your change. Run plain `dotnet test`. Do not bisect it, and do not stash and re-run to prove it. |
+
 ## Feedback loops
 
 Work is sent back, not forward, when a gate fails:
@@ -507,7 +548,7 @@ Each return produces a new PR against the upstream artifact so the change is rec
 ├── .claude-plugin/marketplace.json   # this repo is also the marketplace for the sdlc plugin
 ├── plugins/sdlc/             # the workflow as a plugin: agents/, skills/, scaffold/, scripts/init.sh
 ├── .codex/config.toml        # Codex reviewer model and reasoning effort
-├── .mcp.json                 # playwright-test MCP server for the Playwright agents
+├── .mcp.json                 # playwright-test MCP server (project-level, from the scaffold)
 ├── playwright.config.ts, specs/, tests/e2e/ (incl. seed.spec.ts)   # Phase 6 Playwright project
 ├── scripts/setup.sh          # bootstrap plugins, Playwright, and toolchain on a new machine
 └── src/, tests/              # .NET solution created during Implement

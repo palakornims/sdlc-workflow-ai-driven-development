@@ -112,4 +112,11 @@ else
 fi
 
 echo
+# 7. Stale Playwright MCP servers from earlier sessions (they serve the OLD config)
+STALE=$(ps -eo pid,command 2>/dev/null | grep 'run-test-mcp-server' | grep -v grep | wc -l | tr -d ' ')
+if [ "${STALE:-0}" -gt 0 ]; then
+  warn "$STALE Playwright MCP server process(es) already running. After changing .mcp.json they keep the old config; /reload-plugins does not respawn them. Run /sdlc:doctor --fix or kill them."
+fi
+
 ok "Setup complete. Start or restart Claude Code in this directory; run /reload-plugins in an open session."
+echo "  Playwright MCP port is 4280 (never 5000: macOS AirPlay holds it). Run /sdlc:doctor if browser tools misbehave."

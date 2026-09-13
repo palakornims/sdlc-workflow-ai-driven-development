@@ -21,6 +21,9 @@ copy playwright.config.ts playwright.config.ts
 copy package.json package.json
 copy tests/e2e/seed.spec.ts tests/e2e/seed.spec.ts
 copy specs/README.md specs/README.md
+# playwright-test MCP server: project-level on purpose, so its tools register as
+# mcp__playwright-test__* - the exact names `npx playwright init-agents` writes into the agents.
+copy mcp.json .mcp.json
 copy scripts/setup.sh scripts/setup.sh; chmod +x scripts/setup.sh
 if [ -e .gitignore ]; then
   grep -q 'settings.local.json' .gitignore || { printf '\n# Claude Code local overrides\n.claude/settings.local.json\nnode_modules/\ntest-results/\nplaywright-report/\n' >> .gitignore; ok ".gitignore (appended)"; }

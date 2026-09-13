@@ -13,7 +13,9 @@ ask for approval.
 
 Run a phase with its skill: `/sdlc:plan`, `/sdlc:design`, `/sdlc:breakdown`, `/sdlc:implement TASK-NNN`,
 `/sdlc:review TASK-NNN`, `/sdlc:triage TASK-NNN [Codex output]`, `/sdlc:test STORY-NNN`, `/sdlc:validate STORY-NNN`,
-plus `/sdlc:log` to record a human action and `/sdlc:status` to see where everything stands. Skills come from the `sdlc` plugin (`plugins/sdlc/skills/`) and run in the main session; they check the gate, invoke the right agents
+plus `/sdlc:log` to record a human action, `/sdlc:status` to see where everything stands, and
+`/sdlc:doctor` to diagnose a silent environment problem (missing browser tools, a stale MCP
+server process, a port conflict, status drift). Skills come from the `sdlc` plugin (`plugins/sdlc/skills/`) and run in the main session; they check the gate, invoke the right agents
 in order, and relay the result. They are not model-invocable: a human starts every phase.
 
 ## Subagents
@@ -130,4 +132,22 @@ Code (or run `/reload-plugins`) afterwards.
 - Solution layout, once created by the Design phase, follows Clean Architecture: Domain,
   Application, Infrastructure, Api projects with references pointing inward, guarded by an
   architecture test.
+## Environment gotchas (verified in a full run, do not re-derive)
+
+- **Playwright MCP port is 4280, never 5000.** macOS AirPlay Receiver holds 5000 permanently.
+  The MCP server is a separate child process and does not read `playwright.config.ts`; its port
+  comes from the `env` block in `.mcp.json`. Both must agree.
+- **`browser_*` tools need `planner_setup_page` first**, or they fail with `Must setup test
+  before interacting with the page`. If that tool is not available, drive Playwright through a
+  standalone script via `Bash`.
+- **`/reload-plugins` does not respawn a running MCP server.** After editing `.mcp.json`, kill
+  the `run-test-mcp-server` process or the old config keeps serving tool calls, silently.
+- **`dotnet test --collect:"XPlat Code Coverage"` reports `Zero tests ran`** on xunit v3 with
+  Microsoft.Testing.Platform, while plain `dotnet test` passes. Known collector mismatch, not a
+  regression. Run plain `dotnet test`; do not bisect it.
+- **No agent pins a model.** Agents inherit the session model. Override per call with the Agent
+  tool's `model` parameter when a phase deserves a frontier model.
+
+Run `/sdlc:doctor` when something Playwright-related behaves strangely; it checks all of these.
+
 <!-- sdlc-plugin:end -->

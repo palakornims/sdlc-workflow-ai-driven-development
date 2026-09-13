@@ -11,7 +11,7 @@
 | Layers touched | entities / use cases / interface adapters / frameworks |
 | Size | S / M / L |
 | Risk | Low / Medium / High: <reason> |
-| Status | Ready / In progress / In review / Done / Blocked |
+| Status | **See `docs/03-tasks/backlog.md`** - the backlog row is the single source of truth. Do not repeat the status here. |
 | Depends on | TASK-NNN |
 | Blocks | TASK-NNN |
 | Can run in parallel with | TASK-NNN |
