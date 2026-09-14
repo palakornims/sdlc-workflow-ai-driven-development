@@ -54,17 +54,27 @@ the Playwright agents have browser tools.
 Then run the phases as slash commands:
 
 ```
-/plan <your feature>          /implement TASK-001        /test STORY-001
-/design <your feature>        /review TASK-001           /validate STORY-001
-/breakdown <your feature>     /triage TASK-001 <codex output>
-/status                       /log <what you approved or ran>
+/sdlc:plan <your feature>       /sdlc:implement TASK-001   /sdlc:test STORY-001
+/sdlc:design <your feature>     /sdlc:review TASK-001      /sdlc:validate STORY-001
+/sdlc:breakdown <your feature>  /sdlc:triage TASK-001 <codex output>
+/sdlc:status                    /sdlc:log <what you approved or ran>
+/sdlc:doctor                    # when something Playwright-related misbehaves
 ```
 
 Each command checks the previous gate, runs the right agents, and stops for your approval.
 
+## What changed and why
+
+[`CHANGELOG.md`](CHANGELOG.md) records every release. Findings from real runs, with the fix for
+each, live in [`docs/retrospectives/`](docs/retrospectives/) - start with the
+[first production run](docs/retrospectives/2026-09-13-first-production-run.md), which is where
+most of v1.1.0 came from.
+
 ## Requirements
 
-- Claude Code with access to Fable 5.1 (agents fall back to Opus via `fallbackModel`)
+- Claude Code. No agent pins a model; they inherit your session model, so a frontier model is
+  optional rather than required. Pass `model` per Agent call to spend a frontier budget where it
+  matters.
 - .NET SDK, Node.js 20+, Docker (for Testcontainers), GitHub CLI (for PRs)
 - Codex CLI for the Code Review phase; model pinned in `.codex/config.toml`
 

@@ -468,8 +468,10 @@ test report, the running system.
   not enough.
 - Decide on scope-creep findings; approve `REQ-` changes.
 - Sign off on release, or send findings back to the phase the report names.
-- Hold the retrospective and apply its recommendations to `WORKFLOW.md`, `CLAUDE.md`, and
-  the templates.
+- Hold the retrospective. Write it up in `docs/retrospectives/<date>-<slug>.md` from
+  `docs/templates/retrospective-template.md`, giving every item a disposition, then apply its
+  recommendations to `WORKFLOW.md`, `CLAUDE.md`, and the templates. A finding with no
+  disposition is not finished.
 
 **Agent:** `product-owner` (`plugins/sdlc/agents/product-owner.md`) in validation mode. The same
 agent that wrote the requirements validates them, so the acceptance contract is never
@@ -477,7 +479,8 @@ reinterpreted by a different role.
 
 **Outputs:** `docs/07-validation/validation-<STORY-NNN>-<n>.md`,
 `docs/07-validation/traceability-<STORY-NNN>.md`, `docs/07-validation/release-notes-<version>.md`,
-retrospective input in the report, `docs/07-validation/validation-log.md`. Templates in
+retrospective input in the report (written up after the retrospective as
+`docs/retrospectives/<date>-<slug>.md`), `docs/07-validation/validation-log.md`. Templates in
 `docs/templates/`.
 
 **Gate (Validation complete when):**
@@ -489,7 +492,9 @@ retrospective input in the report, `docs/07-validation/validation-log.md`. Templ
 - [ ] Every `VAL-` finding routed with an owner; no open finding rated Reject.
 - [ ] No open critical or high security findings.
 - [ ] Every step logged in `validation-log.md`.
-- [ ] Human product owner has signed off; retrospective actions are recorded.
+- [ ] Human product owner has signed off.
+- [ ] Retrospective written to `docs/retrospectives/` with a disposition for every item, and
+      workflow-level changes applied to `WORKFLOW.md`, `CLAUDE.md`, or a template.
 
 ---
 
@@ -541,6 +546,7 @@ Each return produces a new PR against the upstream artifact so the change is rec
 │   ├── 05-review/
 │   ├── 06-test/
 │   ├── 07-validation/
+│   ├── retrospectives/       # one file per retrospective, every item with a disposition
 │   └── templates/            # one template per artifact
 ├── .claude/
 │   ├── agents/               # generated Playwright agents (project-local)

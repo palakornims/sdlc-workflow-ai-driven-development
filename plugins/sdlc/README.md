@@ -40,4 +40,7 @@ Playwright agents are generated per project by `npx playwright init-agents --loo
 (run by `scripts/setup.sh`), not shipped here.
 
 Release: bump `version` in `.claude-plugin/plugin.json` and `../../.claude-plugin/marketplace.json`,
-commit, then `claude plugin tag --push` from this directory.
+add a `../../CHANGELOG.md` entry, commit, then `claude plugin tag --push` from this directory.
+
+History and the reasoning behind the design notes above: `../../CHANGELOG.md` and
+`../../docs/retrospectives/`.
