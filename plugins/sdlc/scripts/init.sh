@@ -25,6 +25,15 @@ copy specs/README.md specs/README.md
 # mcp__playwright-test__* - the exact names `npx playwright init-agents` writes into the agents.
 copy mcp.json .mcp.json
 copy scripts/setup.sh scripts/setup.sh; chmod +x scripts/setup.sh
+# Codex second review is optional (needs a ChatGPT plan or OpenAI API key). Default it on only
+# when the Codex CLI is installed and logged in; /sdlc:codex on|off changes it later.
+if [ -e sdlc.config.json ]; then skip "sdlc.config.json"
+else
+  CODEX=false
+  command -v codex >/dev/null 2>&1 && codex login status >/dev/null 2>&1 && CODEX=true
+  printf '{\n  "codexReview": %s\n}\n' "$CODEX" > sdlc.config.json
+  ok "sdlc.config.json (codexReview: $CODEX)"
+fi
 if [ -e .gitignore ]; then
   grep -q 'settings.local.json' .gitignore || { printf '\n# Claude Code local overrides\n.claude/settings.local.json\nnode_modules/\ntest-results/\nplaywright-report/\n' >> .gitignore; ok ".gitignore (appended)"; }
 else cp "$SC/gitignore" .gitignore; ok ".gitignore"; fi

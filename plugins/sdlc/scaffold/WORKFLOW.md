@@ -87,7 +87,7 @@ with, reverted the sign-off twice, and escalated it as a security incident. Noth
 | Product owner | Owns Plan gate. Provides the problem, priorities, and acceptance criteria. |
 | Tech lead | Owns Design and Breakdown gates. Reviews architecture and task sizing. |
 | Developer | Drives the agent through Implement and Test. Reviews every AI-authored PR. |
-| Reviewer | Owns Code Review gate. Reads the AI review report, runs the human-only Codex review commands, decides merge. |
+| Reviewer | Owns Code Review gate. Reads the AI review report, runs the human-only Codex review commands when Codex review is on, decides merge. |
 | QA / reviewer | Owns Validation gate. Confirms acceptance criteria and traceability. |
 | AI agent (Claude Code) | Drafts all artifacts, writes code and tests, self-reviews, reports. |
 
@@ -268,13 +268,17 @@ then opens a PR and stops for human review.
 ## Phase 5: Code Review
 
 **Goal:** Catch defects, layering violations, security regressions, and weak tests before a PR
-merges, using two independent reviewers: Claude (`code-reviewer` agent) and OpenAI Codex
-(`codex@openai-codex` plugin).
+merges. The `code-reviewer` agent always reviews. OpenAI Codex (`codex@openai-codex` plugin)
+is the optional second, independent reviewer, switched per project by `codexReview` in
+`sdlc.config.json` (`/sdlc:codex on|off`; missing file means off). Codex needs a ChatGPT plan or
+OpenAI API key. When it is off, or on but unavailable, the second reviewer is a Sonnet run of
+`code-reviewer` in second-opinion mode instead: every Codex step below is skipped, nothing
+errors, and every change still gets two independent reviews.
 
 **Inputs:** the open PR or branch from Phase 4, the task ticket and its linked design and threat
 model, the quality-loop results, and any Codex output.
 
-**Codex review workflow (mandatory).** The Codex plugin's commands have fixed invocation rules:
+**Codex review workflow (when `codexReview` is on).** The Codex plugin's commands have fixed invocation rules:
 - `/codex:review`, `/codex:adversarial-review`, `/codex:status`, and `/codex:result` are
   declared `disable-model-invocation: true`. Claude cannot run them, here or in any repo. Only a
   human runs them.
@@ -285,25 +289,32 @@ model, the quality-loop results, and any Codex output.
   Respect it; never override per invocation.
 
 **AI activities**
+- Steps naming Codex run only when `codexReview` is on. If Codex is on but fails (not logged
+  in, no subscription, quota), the main session reports "Codex unavailable" and falls back to
+  the Sonnet second opinion.
+- Codex off or unavailable: the main session invokes `code-reviewer` with `model: "sonnet"` in
+  second-opinion mode on the branch diff. It writes nothing and returns a finding list, which
+  plays the role of the rescue output below (source `sonnet-review`).
 - Main session, after any code change and always when the change touches core logic
   (authentication and authorisation model, per-user data isolation, JWT issuance and
   validation, EF Core migrations and queries, cryptography, money handling, threat-model
   controls): proactively run `/codex:rescue` with a focused investigation prompt to find bugs.
-- Main session: invoke the `code-reviewer` agent, passing the PR or branch and the `/codex:rescue`
-  output.
+- Main session: invoke the `code-reviewer` agent, passing the PR or branch, the Codex state
+  (on / off / unavailable), and the second reviewer's output (`/codex:rescue` or
+  `sonnet-review`).
 - `code-reviewer`: review the full diff for scope, correctness, Clean Architecture, .NET/C#
   best practice (via `dotnet-skills`), slopwatch, OWASP Top 10:2025, tests, and operability;
-  verify and classify every Codex finding; write the review report; assign a verdict.
+  verify and classify every second-reviewer finding; write the review report; assign a verdict.
 - Main session: relay the verdict and tell the user to run `/codex:review`, plus
   `/codex:adversarial-review` for core or complex changes, and to check `/codex:result`.
 - If the user runs those and asks Claude to act on the findings, treat them exactly like
   rescue findings: verify, fix genuine bugs through the `dotnet-developer` agent, and do not
   self-trigger the review commands next time.
 
-**Triage and fix loop (after Codex results arrive)**
+**Triage and fix loop (after review findings arrive, from `code-reviewer`, Codex, or a human)**
 
 ```
-Codex output ──▶ code-reviewer registers FND-IDs ──▶ solution-architect reviews ──▶ dotnet-developer reviews
+Findings ─────▶ code-reviewer registers FND-IDs ──▶ solution-architect reviews ──▶ dotnet-developer reviews
                                                           (design impact)                 (code impact)
                                                                  │                              │
                                                                  └──────── Final decision ──────┘
@@ -322,7 +333,7 @@ Codex output ──▶ code-reviewer registers FND-IDs ──▶ solution-archit
                                        └────────────────────┘
 ```
 
-1. Main session passes the Codex output to `code-reviewer`, which registers every item as an
+1. Main session passes any Codex or human output to `code-reviewer`, which registers every item as an
    `FND-` row in the triage sheet, verifies it, and logs the step.
 2. Main session invokes `solution-architect` in triage mode: it judges each finding's design
    impact, records Fix (design intact) / Design change (ADR) / Dismiss / Escalate, updates
@@ -336,8 +347,8 @@ Codex output ──▶ code-reviewer registers FND-IDs ──▶ solution-archit
    approves the PR. Each human action is logged.
 
 **Human activities**
-- Read the review report; run `/codex:review` and, for core or complex changes,
-  `/codex:adversarial-review`; check `/codex:result`; paste the output back and log the run.
+- Read the review report. If Codex review is on: run `/codex:review` and, for core or complex
+  changes, `/codex:adversarial-review`; check `/codex:result`; paste the output back and log the run.
 - Confirm or overturn dismissals of Blocker and Major findings; approve design changes.
 - Approve and merge, or request changes (which returns the task to Phase 4).
 
@@ -353,10 +364,12 @@ decisions, plus append-only activity log), `docs/05-review/review-log.md` (repo-
 **Gate (Code Review complete when):**
 - [ ] Review report exists with a verdict; every finding has a severity.
 - [ ] No open Blocker or Major finding.
-- [ ] `/codex:rescue` was run by the main session for core-logic changes and its findings are
-      classified in the report.
-- [ ] Human has run `/codex:review` (and `/codex:adversarial-review` for core/complex changes)
-      and checked `/codex:result`; findings are registered with `FND-` IDs.
+- [ ] The second reviewer is stated in the report (Codex, or `sonnet-review` when Codex is off
+      or unavailable) and every one of its findings is classified.
+- [ ] If Codex review is on: `/codex:rescue` was run by the main session for core-logic changes
+      and its findings are classified in the report, and the human has run `/codex:review` (and
+      `/codex:adversarial-review` for core/complex changes) and checked `/codex:result`;
+      findings are registered with `FND-` IDs.
 - [ ] `solution-architect` and `dotnet-developer` have each recorded a decision on every
       finding; every finding has a Final decision.
 - [ ] Every Fix is a logged commit with SHA; every Dismiss has a reason (human-confirmed for
@@ -553,7 +566,8 @@ Each return produces a new PR against the upstream artifact so the change is rec
 │   └── settings.json         # model fallback, marketplaces, enabled plugins (incl. sdlc)
 ├── .claude-plugin/marketplace.json   # this repo is also the marketplace for the sdlc plugin
 ├── plugins/sdlc/             # the workflow as a plugin: agents/, skills/, scaffold/, scripts/init.sh
-├── .codex/config.toml        # Codex reviewer model and reasoning effort
+├── sdlc.config.json          # workflow switches: codexReview true/false (/sdlc:codex)
+├── .codex/config.toml        # Codex reviewer model and reasoning effort (used only when codexReview is on)
 ├── .mcp.json                 # playwright-test MCP server (project-level, from the scaffold)
 ├── playwright.config.ts, specs/, tests/e2e/ (incl. seed.spec.ts)   # Phase 6 Playwright project
 ├── scripts/setup.sh          # bootstrap plugins, Playwright, and toolchain on a new machine
@@ -576,13 +590,14 @@ be approved before the next command.
 | `/sdlc:plan <feature>` | none | `product-owner` | `docs/01-plan/` |
 | `/sdlc:design <feature>` | plan Approved | `solution-architect` | `docs/02-design/`, `CLAUDE.md` |
 | `/sdlc:breakdown <feature>` | plan + design Approved | `project-manager` | `docs/03-tasks/` |
-| `/sdlc:implement TASK-NNN` | backlog Approved, DoR met | `dotnet-developer`, then `/codex:rescue` | branch + PR |
-| `/sdlc:review TASK-NNN` | PR open | `/codex:rescue` if needed, `code-reviewer` | `docs/05-review/REVIEW-*`, `TRIAGE-*` |
+| `/sdlc:implement TASK-NNN` | backlog Approved, DoR met | `dotnet-developer`, then `/codex:rescue` if Codex on | branch + PR |
+| `/sdlc:review TASK-NNN` | PR open | `/codex:rescue` if Codex on, else `code-reviewer` on Sonnet (second opinion); then `code-reviewer` | `docs/05-review/REVIEW-*`, `TRIAGE-*` |
 | `/sdlc:triage TASK-NNN [output]` | triage sheet exists | `code-reviewer` → `solution-architect` → `dotnet-developer` → `code-reviewer` | fix commits, logs |
 | `/sdlc:test STORY-NNN` | tasks Done, review clean | `qa-engineer` ↔ `playwright-test-planner` / `generator` / `healer` | `specs/`, `tests/e2e/`, `docs/06-test/` |
 | `/sdlc:validate STORY-NNN` | test report Approved | `product-owner` (validation mode) | `docs/07-validation/` |
 | `/sdlc:log <action> ...` | — | none | appends to the right log and ticket |
 | `/sdlc:status [id]` | — | none | nothing; reports state and next command |
+| `/sdlc:codex on\|off\|status` | — | none | `sdlc.config.json`, review-log row |
 
 `/sdlc:log` exists because the logging rule applies to humans too: approvals, Codex runs, dismissals,
 and sign-offs are recorded through it.

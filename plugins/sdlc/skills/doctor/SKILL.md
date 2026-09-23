@@ -3,7 +3,7 @@ name: doctor
 description: Diagnose the sdlc workflow environment - MCP tool-name mismatches, stale or duplicate Playwright MCP server processes, port conflicts, missing tools, and status drift between task tickets and the backlog. Reports findings and the exact command to fix each one.
 argument-hint: [--fix]
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Bash(ps:*), Bash(lsof:*), Bash(kill:*), Bash(node:*), Bash(npx:*), Bash(cat:*), Bash(ls:*), Bash(grep:*)
+allowed-tools: Read, Glob, Grep, Bash(ps:*), Bash(lsof:*), Bash(kill:*), Bash(node:*), Bash(npx:*), Bash(cat:*), Bash(ls:*), Bash(grep:*), Bash(codex:*), Bash(command:*)
 ---
 
 # /sdlc:doctor - check the workflow environment
@@ -37,6 +37,13 @@ cat .mcp.json 2>/dev/null || echo "NO .mcp.json - run /sdlc:init or npx playwrig
 grep -ho 'mcp__[a-z_]*playwright[a-z_-]*__' .claude/agents/*.md 2>/dev/null | sort -u || echo "no playwright agents found"
 ```
 
+## Codex review setting and readiness
+
+```!
+cat sdlc.config.json 2>/dev/null || echo "no sdlc.config.json (Codex review off)"
+command -v codex >/dev/null 2>&1 && codex login status 2>&1 | head -1 || echo "Codex CLI not installed"
+```
+
 ## Task status drift (ticket header vs backlog)
 
 ```!
@@ -62,7 +69,10 @@ Report each check as OK or a finding, with the fix:
    agents were patched for an older layout: regenerate them with `npm run playwright:agents`.
 4. **Status drift.** No ticket should carry its own status; `docs/03-tasks/backlog.md` is the
    single source of truth. Report any ticket that repeats it.
-5. **Missing tools.** If any check could not run, say which tool is missing.
+5. **Codex on but not ready.** If `codexReview` is `true` and the CLI is missing or not logged
+   in, every Codex step will report "unavailable". Fix: `codex login`, or `/sdlc:codex off`.
+   Off with no CLI is fine, not a finding.
+6. **Missing tools.** If any check could not run, say which tool is missing.
 
 With `--fix`, additionally: kill duplicate MCP server processes (keep the newest), and report
 what you killed. Change no files without saying so first.

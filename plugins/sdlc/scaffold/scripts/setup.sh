@@ -4,12 +4,13 @@
 # Required Claude Code plugins (installed at project scope, recorded in .claude/settings.json):
 #   sdlc@sdlc-workflow            the workflow itself: phase agents and /sdlc:* commands
 #   dotnet-skills@dotnet-skills   .NET / C# practices used by dotnet-developer and code-reviewer
-#   codex@openai-codex            OpenAI Codex second reviewer used in the Code Review phase
+#   codex@openai-codex            OPTIONAL OpenAI Codex second reviewer (Code Review phase);
+#                                 installed only when sdlc.config.json has "codexReview": true
 #
 # Playwright (Phase 6): installs npm deps and browsers, regenerates the Playwright agents
 #   (.claude/agents/playwright-test-*.md) with `npx playwright init-agents --loop=claude`.
 #
-# Required tools checked (warn only): Codex CLI, .NET SDK, GitHub CLI, Docker.
+# Required tools checked (warn only): .NET SDK, GitHub CLI, Docker; Codex CLI only if codexReview is on.
 # Idempotent: safe to rerun. Usage: ./scripts/setup.sh
 set -euo pipefail
 
@@ -17,7 +18,6 @@ set -euo pipefail
 PLUGINS=(
   "sdlc-workflow|palakornims/sdlc-workflow-ai-driven-development|sdlc@sdlc-workflow"
   "dotnet-skills|Aaronontheweb/dotnet-skills|dotnet-skills@dotnet-skills"
-  "openai-codex|openai/codex-plugin-cc|codex@openai-codex"
 )
 
 ok()   { printf '\033[32m✔\033[0m %s\n' "$*"; }
@@ -31,6 +31,13 @@ fi
 ok "Claude Code $(claude --version 2>/dev/null | head -1)"
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+CODEX_REVIEW=0
+grep -Eq '"codexReview"[[:space:]]*:[[:space:]]*true' "$REPO_DIR/sdlc.config.json" 2>/dev/null && CODEX_REVIEW=1
+if [ "$CODEX_REVIEW" = 1 ]; then
+  PLUGINS+=("openai-codex|openai/codex-plugin-cc|codex@openai-codex")
+else
+  ok "Codex review is off (sdlc.config.json); skipping the Codex plugin. Enable with /sdlc:codex on"
+fi
 plugin_state() {
   # prints "installed enabled" flags for plugin $1 scoped to this repo, e.g. "1 1"
   claude plugin list --json 2>/dev/null | python3 -c '
@@ -90,10 +97,14 @@ else
 fi
 
 # 6. Toolchain checks (warn only; the Design phase pins the exact SDK in global.json)
-if command -v codex >/dev/null 2>&1; then
-  ok "Codex CLI $(codex --version 2>/dev/null | head -1) (config: .codex/config.toml)"
-else
-  warn "Codex CLI not found. Install with: npm install -g @openai/codex   (then run /codex:setup inside Claude Code)"
+if [ "$CODEX_REVIEW" = 1 ]; then
+  if ! command -v codex >/dev/null 2>&1; then
+    warn "Codex review is on but the Codex CLI is not found. Install: npm install -g @openai/codex, then codex login (or turn it off: /sdlc:codex off)"
+  elif ! codex login status >/dev/null 2>&1; then
+    warn "Codex review is on but Codex is not logged in. Run: codex login (or turn it off: /sdlc:codex off)"
+  else
+    ok "Codex CLI $(codex --version 2>/dev/null | head -1), logged in (config: .codex/config.toml)"
+  fi
 fi
 if command -v dotnet >/dev/null 2>&1; then
   ok ".NET SDK $(dotnet --version 2>/dev/null)"

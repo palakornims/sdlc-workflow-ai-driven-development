@@ -1,6 +1,6 @@
 ---
 name: init
-description: Scaffold the AI-driven SDLC workflow into the current project - docs folders, templates, logs, WORKFLOW.md, CLAUDE.md section, settings, Codex and Playwright config, setup script. Idempotent; never overwrites existing files.
+description: Scaffold the AI-driven SDLC workflow into the current project - docs folders, templates, logs, WORKFLOW.md, CLAUDE.md section, settings, sdlc.config.json (Codex review on/off), Codex and Playwright config, setup script. Idempotent; never overwrites existing files.
 argument-hint: [--no-setup]
 disable-model-invocation: true
 allowed-tools: Bash(bash:*), Read, Glob
@@ -22,6 +22,8 @@ Then:
 1. Show the user the script output verbatim.
 2. Read the project's `CLAUDE.md` and confirm the sdlc section is present.
 3. Tell the user: restart Claude Code or run `/reload-plugins`; approve the `playwright-test`
-   MCP server when prompted; if `.codex/config.toml` pins a model they cannot use, change it;
-   then start with `/sdlc:plan <feature>`.
+   MCP server when prompted; report the `codexReview` value the script wrote to
+   `sdlc.config.json` (on only when the Codex CLI is installed and logged in) and that
+   `/sdlc:codex on|off` changes it; if Codex is on and `.codex/config.toml` pins a model they
+   cannot use, change it; then start with `/sdlc:plan <feature>`.
 4. Do not modify any file the script reported as "exists, kept".

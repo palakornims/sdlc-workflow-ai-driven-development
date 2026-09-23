@@ -1,8 +1,8 @@
 {
   "name": "sdlc",
   "displayName": "AI-Driven SDLC Workflow",
-  "version": "1.1.1",
-  "description": "Seven-phase AI-driven SDLC for Claude Code: Plan, Design, Breakdown, Implement, Code Review, Test, Validation. One subagent per phase, slash commands to run them, mandatory document approval and step logging. .NET backend, Playwright tests, Codex second review.",
+  "version": "1.2.0",
+  "description": "Seven-phase AI-driven SDLC for Claude Code: Plan, Design, Breakdown, Implement, Code Review, Test, Validation. One subagent per phase, slash commands to run them, mandatory document approval and step logging. .NET backend, Playwright tests, optional Codex second review.",
   "author": {
     "name": "palakornims",
     "url": "https://github.com/palakornims"
@@ -22,10 +22,6 @@
     {
       "name": "dotnet-skills",
       "marketplace": "dotnet-skills"
-    },
-    {
-      "name": "codex",
-      "marketplace": "openai-codex"
     }
   ]
 }

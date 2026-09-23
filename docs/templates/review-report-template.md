@@ -8,7 +8,7 @@
 | Reviewer | code-reviewer agent |
 | Date | <YYYY-MM-DD> |
 | Verdict | Approve / Approve with comments / Request changes |
-| Codex coverage | rescue output supplied / requested / not needed (routine change) |
+| Second reviewer | codex:rescue (supplied / requested / not needed) / sonnet-review (Codex off / Codex unavailable: <reason>) |
 
 ## Summary
 
@@ -44,12 +44,14 @@
 | A09:2025 Security Logging and Alerting Failures | | | | |
 | A10:2025 Mishandling of Exceptional Conditions | | | | |
 
-## Codex findings
+## Second-reviewer findings
 
-| ID (FND-) | Source (rescue / review / adversarial) | Finding | Verification | Classification | Action |
+Codex findings when Codex review is on; `sonnet-review` findings when it is off or unavailable.
+
+| ID (FND-) | Source (rescue / review / adversarial / sonnet-review) | Finding | Verification | Classification | Action |
 |-----------|----------------------------------------|---------|--------------|----------------|--------|
 
-Suggested `/codex:rescue` prompt (if coverage is missing):
+Suggested `/codex:rescue` or second-opinion prompt (if coverage is missing):
 
 ## Triage sheet
 
@@ -57,7 +59,7 @@ Suggested `/codex:rescue` prompt (if coverage is missing):
 
 ## Instructions for the human
 
-- [ ] Run `/codex:review`
-- [ ] Run `/codex:adversarial-review` (required for core/complex changes)
-- [ ] Check `/codex:result` and send findings to Claude to act on
+- [ ] Run `/codex:review` (only if Codex review is on)
+- [ ] Run `/codex:adversarial-review` (only if Codex review is on; required for core/complex changes)
+- [ ] Check `/codex:result` and send findings to Claude to act on (only if Codex review is on)
 - [ ] Route required changes to the dotnet-developer agent for TASK-NNN

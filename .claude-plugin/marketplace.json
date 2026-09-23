@@ -6,15 +6,14 @@
   },
   "description": "AI-driven SDLC workflow plugins for Claude Code",
   "allowCrossMarketplaceDependenciesOn": [
-    "dotnet-skills",
-    "openai-codex"
+    "dotnet-skills"
   ],
   "plugins": [
     {
       "name": "sdlc",
       "source": "./plugins/sdlc",
-      "description": "Seven-phase AI-driven SDLC: phase agents, slash commands, document templates, mandatory approvals and logging. .NET, Playwright, Codex.",
-      "version": "1.1.1",
+      "description": "Seven-phase AI-driven SDLC: phase agents, slash commands, document templates, mandatory approvals and logging. .NET, Playwright, optional Codex review.",
+      "version": "1.2.0",
       "category": "workflow",
       "keywords": [
         "sdlc",

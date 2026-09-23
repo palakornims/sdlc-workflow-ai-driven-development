@@ -7,7 +7,6 @@
   },
   "enabledPlugins": {
     "sdlc@sdlc-workflow": true,
-    "dotnet-skills@dotnet-skills": true,
-    "codex@openai-codex": true
+    "dotnet-skills@dotnet-skills": true
   }
 }

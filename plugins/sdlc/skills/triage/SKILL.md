@@ -1,7 +1,7 @@
 ---
 name: triage
-description: Phase 5 triage-and-fix loop. Register Codex or human review findings, get solution-architect and dotnet-developer decisions, fix agreed findings one commit each, and re-review, logging every step.
-argument-hint: TASK-NNN [paste Codex /codex:result output or finding list]
+description: Phase 5 triage-and-fix loop. Register code-reviewer, Codex (when on), or human review findings, get solution-architect and dotnet-developer decisions, fix agreed findings one commit each, and re-review, logging every step.
+argument-hint: TASK-NNN [paste /codex:result output or a finding list]
 disable-model-invocation: true
 allowed-tools: Agent, Read, Glob, Grep, Bash(git:*)
 ---
@@ -9,7 +9,10 @@ allowed-tools: Agent, Read, Glob, Grep, Bash(git:*)
 # /sdlc:triage — Phase 5: findings triage and fix loop
 
 You are the main session running the triage loop of `WORKFLOW.md` Phase 5. The first word of
-the arguments is the task ID; everything after it is review output to register.
+the arguments is the task ID; everything after it is review output to register. The loop is
+the same whether or not Codex review is on: with Codex off, the findings are the FND- rows
+`/sdlc:review` already registered (the reviewer's own and the Sonnet second opinion's), plus
+anything a human pastes.
 
 Arguments: $ARGUMENTS
 

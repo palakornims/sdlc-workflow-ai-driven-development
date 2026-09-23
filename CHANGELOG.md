@@ -3,6 +3,40 @@
 All notable changes to the `sdlc` plugin and this workflow repository.
 Versions follow the plugin's `.claude-plugin/plugin.json`, tagged `sdlc--v<version>`.
 
+## [1.2.0] - 2026-09-23
+
+### Changed
+
+- **Codex review is now optional and can be turned on or off.** Users without a Codex
+  subscription reported that the workflow errored in Phase 4 and 5 because `/codex:rescue` was
+  run unconditionally. A new `sdlc.config.json` at the project root holds
+  `"codexReview": true | false`; a missing file means off. Every Codex step in
+  `/sdlc:implement`, `/sdlc:review`, the `code-reviewer` agent, `WORKFLOW.md`, and the CLAUDE.md
+  section is gated on it. With it off, nothing calls Codex and the triage loop is unchanged.
+- If Codex is on but fails at run time (not installed, logged out, no subscription, quota), the
+  phase reports "Codex unavailable" and falls back to the Sonnet second review.
+- **Sonnet second review replaces Codex when Codex is off.** `/sdlc:review` invokes
+  `code-reviewer` with `model: "sonnet"` in a new second-opinion mode: it reviews the diff
+  independently, writes no files, and returns a finding list. The reviewer of record verifies,
+  classifies, and registers each item with source `sonnet-review`, just like `/codex:rescue`
+  output, so every change still gets two independent reviews. The review report's "Codex
+  coverage" field is now "Second reviewer".
+- `codex@openai-codex` is no longer a plugin dependency or enabled in the scaffold settings.
+  `scripts/setup.sh` installs it, and checks the CLI and login, only when `codexReview` is true.
+
+### Added
+
+- `/sdlc:codex on|off|status` toggles the setting, checks CLI, login, and plugin readiness,
+  prints the install commands for whatever is missing, and logs the change in `review-log.md`.
+- `/sdlc:init` writes `sdlc.config.json`, defaulting `codexReview` to true only when the Codex
+  CLI is installed and `codex login status` succeeds.
+- `/sdlc:doctor` reports Codex on but not ready.
+
+### Upgrading
+
+Existing projects have no `sdlc.config.json`, so Codex review turns **off** after upgrading. Run
+`/sdlc:codex on` to keep using it.
+
 ## [1.1.1] - 2026-09-14
 
 ### Added

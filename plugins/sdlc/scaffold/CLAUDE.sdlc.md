@@ -12,8 +12,9 @@ ask for approval.
 ## Slash commands (skills)
 
 Run a phase with its skill: `/sdlc:plan`, `/sdlc:design`, `/sdlc:breakdown`, `/sdlc:implement TASK-NNN`,
-`/sdlc:review TASK-NNN`, `/sdlc:triage TASK-NNN [Codex output]`, `/sdlc:test STORY-NNN`, `/sdlc:validate STORY-NNN`,
-plus `/sdlc:log` to record a human action, `/sdlc:status` to see where everything stands, and
+`/sdlc:review TASK-NNN`, `/sdlc:triage TASK-NNN [review output]`, `/sdlc:test STORY-NNN`, `/sdlc:validate STORY-NNN`,
+plus `/sdlc:log` to record a human action, `/sdlc:status` to see where everything stands,
+`/sdlc:codex on|off|status` to toggle the optional Codex second review, and
 `/sdlc:doctor` to diagnose a silent environment problem (missing browser tools, a stale MCP
 server process, a port conflict, status drift). Skills come from the `sdlc` plugin (`plugins/sdlc/skills/`) and run in the main session; they check the gate, invoke the right agents
 in order, and relay the result. They are not model-invocable: a human starts every phase.
@@ -66,10 +67,18 @@ bootstrap the planner and generator start from; `BASE_URL` selects the host unde
 Application defects found in testing become `DEF-NNN` entries and go back to `dotnet-developer`
 through the Phase 5 triage loop, logged like any other finding.
 
-## Codex review workflow (after any code change)
+## Codex review workflow (optional, after any code change)
 
-The OpenAI Codex plugin (`codex@openai-codex`) is the second reviewer. Its command frontmatter
-fixes who may run what:
+The OpenAI Codex plugin (`codex@openai-codex`) is an **optional** second reviewer, switched by
+`codexReview` in `sdlc.config.json` (`/sdlc:codex on|off`; a missing file means off). When it is
+off, skip every Codex step below and use a Sonnet second opinion instead: the main session
+invokes `code-reviewer` with `model: "sonnet"` in second-opinion mode (writes nothing, returns a
+finding list), then passes that list to the normal `code-reviewer` run as `sonnet-review` output
+to verify, classify, and register, exactly like rescue output. The triage loop (step 5) is
+unchanged. When Codex is on but fails (not logged in, no subscription, quota), report "Codex
+unavailable", fall back to the Sonnet second opinion, and continue; never let Codex block a phase.
+
+When it is on, the plugin's command frontmatter fixes who may run what:
 
 - `/codex:review`, `/codex:adversarial-review`, `/codex:status`, and `/codex:result` are
   `disable-model-invocation: true`. Claude has no path to run these itself, in this repo or any
@@ -77,7 +86,7 @@ fixes who may run what:
 - `/codex:rescue` spawns the `codex:codex-rescue` subagent via the Agent tool, so only the main
   session can run it; subagents (including `code-reviewer`) cannot.
 
-So after any code change in this repo:
+So after any code change in this repo, with Codex review on:
 
 1. The main session proactively runs `/codex:rescue` to investigate and find bugs, especially
    when the change touches core logic: auth model, per-user data isolation, JWT issuance and
@@ -109,9 +118,9 @@ reasoning-effort setting). Respect whatever is set there; never override it per 
 
 ## Setting up on a new machine
 
-Run `./scripts/setup.sh` once. It registers the `dotnet-skills` and `openai-codex`
-marketplaces, installs both plugins at project scope, installs the Playwright npm dependencies
-and browsers, regenerates the Playwright agents, and checks for the Codex CLI, .NET SDK,
+Run `./scripts/setup.sh` once. It registers the `dotnet-skills` marketplace and installs that
+plugin at project scope (plus `codex@openai-codex` only when `codexReview` is true), installs the Playwright npm dependencies
+and browsers, regenerates the Playwright agents, and checks for the .NET SDK,
 GitHub CLI, and Docker. `.claude/settings.json`
 also declares the marketplace under `extraKnownMarketplaces`, so trusting the repo folder
 registers it automatically, but the plugin itself still needs the install step. Restart Claude

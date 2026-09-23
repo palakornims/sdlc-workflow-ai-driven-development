@@ -15,9 +15,9 @@ then `/reload-plugins` after edits.
 | Component | Contents |
 |-----------|----------|
 | `agents/` | product-owner, solution-architect, project-manager, dotnet-developer, code-reviewer, qa-engineer |
-| `skills/` | `/sdlc:init`, `/sdlc:plan`, `/sdlc:design`, `/sdlc:breakdown`, `/sdlc:implement`, `/sdlc:review`, `/sdlc:triage`, `/sdlc:test`, `/sdlc:validate`, `/sdlc:log`, `/sdlc:status`, `/sdlc:doctor` |
+| `skills/` | `/sdlc:init`, `/sdlc:plan`, `/sdlc:design`, `/sdlc:breakdown`, `/sdlc:implement`, `/sdlc:review`, `/sdlc:triage`, `/sdlc:test`, `/sdlc:validate`, `/sdlc:log`, `/sdlc:status`, `/sdlc:codex`, `/sdlc:doctor` |
 | `scaffold/mcp.json` | `playwright-test` MCP server, installed into the **project** as `.mcp.json` |
-| `scaffold/` | Everything `/sdlc:init` copies into a project: docs, templates, logs, WORKFLOW.md, CLAUDE.md section, settings, Codex and Playwright config, setup script |
+| `scaffold/` | Everything `/sdlc:init` copies into a project: docs, templates, logs, WORKFLOW.md, CLAUDE.md section, settings, `sdlc.config.json`, Codex and Playwright config, setup script |
 | `scripts/init.sh` | The idempotent scaffold installer |
 
 ## Design notes
@@ -30,12 +30,18 @@ then `/reload-plugins` after edits.
 - **No agent pins a model.** Agents inherit the session model. Pinned frontier models caused
   five rate-limit stalls in one real seven-phase run. Override per call with the Agent tool's
   `model` parameter, or per project with a copy of the agent in `.claude/agents/`.
+- **Codex is optional and never blocks a phase.** It needs a paid OpenAI account, so it is not a
+  plugin dependency. `codexReview` in `sdlc.config.json` gates every Codex step; a missing file
+  means off; with Codex off or failing, the second review runs as `code-reviewer` on Sonnet in second-opinion
+  mode, so every change still gets two independent reviews.
 - **Port 4280, never 5000.** macOS AirPlay Receiver holds 5000. The port lives in the `env`
   block of the project's `.mcp.json` and in `playwright.config.ts`; both must agree.
 
 Run `/sdlc:doctor` to check all of the above plus stale MCP processes and task-status drift.
 
-Dependencies (auto-installed): `dotnet-skills@dotnet-skills`, `codex@openai-codex`.
+Dependencies (auto-installed): `dotnet-skills@dotnet-skills`. `codex@openai-codex` is optional:
+`scripts/setup.sh` installs it only when `sdlc.config.json` has `"codexReview": true`
+(`/sdlc:codex on|off`).
 Playwright agents are generated per project by `npx playwright init-agents --loop=claude`
 (run by `scripts/setup.sh`), not shipped here.
 
